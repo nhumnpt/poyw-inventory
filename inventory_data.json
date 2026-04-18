@@ -1,0 +1,82 @@
+[
+  {
+    "id": "1111111111",
+    "name": "1",
+    "price": 555,
+    "unit": "ตัว",
+    "minStock": 3,
+    "balance": 3
+  },
+  {
+    "id": "2222222222",
+    "name": "2",
+    "price": 666,
+    "unit": "ตัว",
+    "minStock": 3,
+    "balance": 9
+  },
+  {
+    "id": "3333333333",
+    "name": "3",
+    "price": 777,
+    "unit": "ตัว",
+    "minStock": 3,
+    "balance": -1229
+  },
+  {
+    "id": "4444444444",
+    "name": "4",
+    "price": 555,
+    "unit": "ตัว",
+    "minStock": 3,
+    "balance": 0
+  },
+  {
+    "id": "5555555555",
+    "name": "5",
+    "price": 500,
+    "unit": "ตัว",
+    "minStock": 3,
+    "balance": 0
+  },
+  {
+    "id": "6666666666",
+    "name": "6",
+    "price": 500,
+    "unit": "ตัว",
+    "minStock": 5,
+    "balance": 0
+  },
+  {
+    "id": "777",
+    "name": "7",
+    "price": 600,
+    "unit": "ตัว",
+    "minStock": 5,
+    "balance": 5
+  },
+  {
+    "id": "888",
+    "name": "8",
+    "price": 10,
+    "unit": "ตัว",
+    "minStock": 5,
+    "balance": 104
+  },
+  {
+    "id": "99999999",
+    "name": "9",
+    "price": 5,
+    "unit": "ชิ้น",
+    "minStock": 5,
+    "balance": 110
+  },
+  {
+    "id": "123",
+    "name": "10",
+    "price": 10,
+    "unit": "ตัว",
+    "minStock": 5,
+    "balance": 500
+  }
+]
