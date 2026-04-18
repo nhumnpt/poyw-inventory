@@ -9,11 +9,12 @@ import Mascot from './Mascot';
 function cn(...inputs) { return twMerge(clsx(inputs)); }
 
 // Import Data
-import productDataRaw from '../product_data.json';
-import dashboardDataRaw from '../dashboard_data.json';
-import adminDataRaw from '../admin_data.json';
-import buyDataRaw from '../buy_data.json';
-import outputDataRaw from '../output_data.json';
+// Static JSON imports removed – data will be fetched from the server API
+// import productDataRaw from '../product_data.json';
+// import dashboardDataRaw from '../dashboard_data.json';
+// import adminDataRaw from '../admin_data.json';
+// import buyDataRaw from '../buy_data.json';
+// import outputDataRaw from '../output_data.json';
 
 const safeArr = (d) => Array.isArray(d) ? d : [];
 const API_URL = '';
@@ -22,6 +23,34 @@ export default function App() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user_session') || 'null'));
   const [view, setView] = useState(() => localStorage.getItem('current_view') || 'product');
   const [search, setSearch] = useState('');
+  // State to hold all data fetched from the server
+  const [dataMap, setDataMap] = useState({
+    product: [],
+    dashboard: [],
+    admin: [],
+    input: [],
+    output: []
+  });
+
+  // Fetch data once on component mount (and when view changes if needed)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/data`);
+        const json = await res.json();
+        setDataMap({
+          product: json.product || [],
+          dashboard: json.dashboard || [],
+          admin: json.admin || [],
+          input: json.buy || [],
+          output: json.output || []
+        });
+      } catch (e) {
+        console.error('❌ Failed to fetch data from server:', e);
+      }
+    };
+    fetchData();
+  }, []);
   const [showLogin, setShowLogin] = useState(false);
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
@@ -34,12 +63,12 @@ export default function App() {
   const [barcodeModal, setBarcodeModal] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
 
-  const inventoryData = safeArr(productDataRaw);
+  const inventoryData = safeArr(cleanedProductData);
   // Filter out corrupted rows (e.g. rows with only วันที่ as a quote character)
-  const buyHistoryData = safeArr(buyDataRaw).filter(r => Object.keys(r).length > 1 || (Object.keys(r).length === 1 && Object.keys(r)[0] !== 'วันที่'));
-  const outputHistoryData = safeArr(outputDataRaw).filter(r => Object.keys(r).length > 1 || (Object.keys(r).length === 1 && Object.keys(r)[0] !== 'วันที่'));
-  const adminData = safeArr(adminDataRaw);
-  const dashboardData = safeArr(dashboardDataRaw);
+  const buyHistoryData = safeArr(dataMap.input).filter(r => Object.keys(r).length > 1 || (Object.keys(r).length === 1 && Object.keys(r)[0] !== 'วันที่'));
+  const outputHistoryData = safeArr(dataMap.output).filter(r => Object.keys(r).length > 1 || (Object.keys(r).length === 1 && Object.keys(r)[0] !== 'วันที่'));
+  const adminData = safeArr(dataMap.admin);
+  const dashboardData = safeArr(dataMap.dashboard);
 
   // Clean product data: remove [ki column, ensure รวม exists
   const cleanedProductData = inventoryData.map(p => {
@@ -52,13 +81,7 @@ export default function App() {
     return clean;
   });
 
-  const dataMap = {
-    product: cleanedProductData,
-    dashboard: dashboardData,
-    admin: adminData,
-    input: buyHistoryData,
-    output: outputHistoryData
-  };
+  // Removed redundant dataMap redefinition – we now use the state dataMap directly.
 
   useEffect(() => { localStorage.setItem('current_view', view); }, [view]);
 
@@ -118,7 +141,22 @@ export default function App() {
       if (res.ok) {
         const excelNote = data.excelSynced ? '✅ Excel synced' : '⚠️ Excel ล็อคอยู่ (JSON บันทึกแล้ว)';
         setMsg({ type: 'success', text: `บันทึกสำเร็จ! ยอดคงเหลือ: ${data.newBalance} — ${excelNote}` });
-        setTimeout(() => window.location.reload(), 1500);
+        // Refresh data from the server instead of reloading the whole page
+        (async () => {
+          try {
+            const freshRes = await fetch(`${API_URL}/api/data`);
+            const freshJson = await freshRes.json();
+            setDataMap({
+              product: freshJson.product || [],
+              dashboard: freshJson.dashboard || [],
+              admin: freshJson.admin || [],
+              input: freshJson.buy || [],
+              output: freshJson.output || []
+            });
+          } catch (e) {
+            console.error('❌ Failed to refresh data after transaction:', e);
+          }
+        })();
       } else {
         setMsg({ type: 'error', text: data.error || 'Server Error' });
       }
