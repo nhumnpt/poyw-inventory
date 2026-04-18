@@ -79,7 +79,8 @@ async function getDoc() {
 async function trySyncToGoogleSheets(type, newLog, productId, newBalance, inputPrice, isNewProduct, productName) {
   try {
     const doc = await getDoc();
-    const productSheet = doc.sheetsByTitle['product'];
+    // Try both lowercase and capitalized sheet titles for product data
+    let productSheet = doc.sheetsByTitle['product'] || doc.sheetsByTitle['Product'];
     if (productSheet) {
       await productSheet.loadHeaderRow();
       const rows = await productSheet.getRows();
@@ -218,4 +219,11 @@ app.use((req, res) => {
 });
 
 
-app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
+  // Auto‑sync Google Sheets every 30 seconds
+  setInterval(() => {
+    console.log('🔄 Auto‑syncing Google Sheets...');
+    pullGoogleSheets().catch(err => console.error('Auto‑sync error:', err));
+  }, 30_000);
+});
