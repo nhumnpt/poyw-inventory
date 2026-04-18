@@ -207,7 +207,7 @@ setInterval(pullGoogleSheets, 30000); // Poll every 30s in production
 pullGoogleSheets();
 
 // Catch-all to serve index.html for SPA
-app.get('/*', (req, res) => {
+app.get('/:any*', (req, res) => {
   const indexPath = path.join(projectDir, 'dist', 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
