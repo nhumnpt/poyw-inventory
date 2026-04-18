@@ -63,23 +63,14 @@ export default function App() {
   const [barcodeModal, setBarcodeModal] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
 
-  const inventoryData = safeArr(cleanedProductData);
+  const inventoryData = safeArr(dataMap.product);
   // Filter out corrupted rows (e.g. rows with only วันที่ as a quote character)
   const buyHistoryData = safeArr(dataMap.input).filter(r => Object.keys(r).length > 1 || (Object.keys(r).length === 1 && Object.keys(r)[0] !== 'วันที่'));
   const outputHistoryData = safeArr(dataMap.output).filter(r => Object.keys(r).length > 1 || (Object.keys(r).length === 1 && Object.keys(r)[0] !== 'วันที่'));
   const adminData = safeArr(dataMap.admin);
   const dashboardData = safeArr(dataMap.dashboard);
 
-  // Clean product data: remove [ki column, ensure รวม exists
-  const cleanedProductData = inventoryData.map(p => {
-    const clean = { ...p };
-    delete clean['[ki'];
-    // Ensure รวม is calculated
-    if (clean['รวม'] === undefined || clean['รวม'] === null) {
-      clean['รวม'] = (Number(clean['ราคาซื้อ'] || 0)) * (Number(clean['ยอดคงเหลือ'] || 0));
-    }
-    return clean;
-  });
+  
 
   // Removed redundant dataMap redefinition – we now use the state dataMap directly.
 
