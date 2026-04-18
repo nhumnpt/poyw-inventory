@@ -225,5 +225,5 @@ app.listen(port, () => {
   setInterval(() => {
     console.log('🔄 Auto‑syncing Google Sheets...');
     pullGoogleSheets().catch(err => console.error('Auto‑sync error:', err));
-  }, 30_000);
+  }, 5_000);
 });

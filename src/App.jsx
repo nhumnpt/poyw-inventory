@@ -50,6 +50,8 @@ export default function App() {
       }
     };
     fetchData();
+    const intervalId = setInterval(fetchData, 4000);
+    return () => clearInterval(intervalId);
   }, []);
   const [showLogin, setShowLogin] = useState(false);
   const [loginUser, setLoginUser] = useState('');
@@ -608,8 +610,8 @@ export default function App() {
                      </div>
                    )}
                    
-                   <div className="grid grid-cols-2 gap-4">
-                     {view === 'input' && (
+                   <div className={cn("grid gap-4", (view === 'input' && isNewProduct) ? "grid-cols-2" : "grid-cols-1")}>
+                     {view === 'input' && isNewProduct && (
                        <div className="space-y-1.5">
                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ราคา (บาท)</label>
                          <input type="number" name="price" min="0" step="any" placeholder="0.00" className="w-full bg-slate-50 p-2.5 rounded-lg border border-slate-200 outline-none focus:border-blue-400 transition-colors" { ...(isNewProduct ? { required: true } : {}) } />
