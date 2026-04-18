@@ -62,6 +62,9 @@ export default function App() {
   const [confirmModal, setConfirmModal] = useState(null);
   const [barcodeModal, setBarcodeModal] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
+  // New state for admin edit modal
+  const [editModal, setEditModal] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   const inventoryData = safeArr(dataMap.product);
   // Filter out corrupted rows (e.g. rows with only วันที่ as a quote character)
@@ -177,6 +180,9 @@ export default function App() {
                     {c}
                   </th>
                 ))}
+                {user && user.role === 'admin' && (
+                  <th className="px-4 py-2.5 font-bold text-slate-700 border-r border-slate-300 last:border-0 text-xs">จัดการ</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -606,7 +612,7 @@ export default function App() {
                      {view === 'input' && (
                        <div className="space-y-1.5">
                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ราคา (บาท)</label>
-                         <input type="number" name="price" min="0" step="any" placeholder="0.00" className="w-full bg-slate-50 p-2.5 rounded-lg border border-slate-200 outline-none focus:border-blue-400 transition-colors" required />
+                         <input type="number" name="price" min="0" step="any" placeholder="0.00" className="w-full bg-slate-50 p-2.5 rounded-lg border border-slate-200 outline-none focus:border-blue-400 transition-colors" { ...(isNewProduct ? { required: true } : {}) } />
                        </div>
                      )}
                      <div className="space-y-1.5">
@@ -631,6 +637,61 @@ export default function App() {
         <div className="pb-10">
           {view === 'dashboard' ? renderDashboard() : renderTable(dataMap[view])}
         </div>
+        {/* Admin edit modal */}
+        {editModal && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full">
+              <h3 className="font-bold text-lg mb-4">แก้ไขสินค้า</h3>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const updates = Object.fromEntries(fd);
+                setEditLoading(true);
+                try {
+                  const res = await fetch(`${API_URL}/api/edit-product`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: editModal['รหัสพัสดุ'], updates })
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    setMsg({ type: 'success', text: 'อัปเดตสินค้าเรียบร้อย' });
+                    // Refresh data from server
+                    const freshRes = await fetch(`${API_URL}/api/data`);
+                    const freshJson = await freshRes.json();
+                    setDataMap({
+                      product: freshJson.product || [],
+                      dashboard: freshJson.dashboard || [],
+                      admin: freshJson.admin || [],
+                      input: freshJson.buy || [],
+                      output: freshJson.output || []
+                    });
+                  } else {
+                    setMsg({ type: 'error', text: data.error || 'อัปเดตสินค้าไม่สำเร็จ' });
+                  }
+                } catch (err) {
+                  console.error(err);
+                  setMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการอัปเดต' });
+                } finally {
+                  setEditLoading(false);
+                  setEditModal(null);
+                }
+              }} className="space-y-3">
+                <label className="block text-sm font-medium">ชื่อพัสดุ</label>
+                <input type="text" name="ชื่อพัสดุ" defaultValue={editModal['ชื่อพัสดุ']} className="w-full border rounded p-2" />
+                <label className="block text-sm font-medium">ราคาซื้อ</label>
+                <input type="number" name="ราคาซื้อ" defaultValue={editModal['ราคาซื้อ']} className="w-full border rounded p-2" />
+                <label className="block text-sm font-medium">ยอดคงเหลือ</label>
+                <input type="number" name="ยอดคงเหลือ" defaultValue={editModal['ยอดคงเหลือ']} className="w-full border rounded p-2" />
+                <div className="flex gap-2 mt-4">
+                  <button type="button" onClick={() => setEditModal(null)} className="flex-1 py-2 bg-gray-200 rounded">ยกเลิก</button>
+                  <button type="submit" disabled={editLoading} className="flex-1 py-2 bg-blue-600 text-white rounded">บันทึก</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
       </main>
       <Mascot />
 
