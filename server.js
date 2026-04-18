@@ -207,7 +207,8 @@ setInterval(pullGoogleSheets, 30000); // Poll every 30s in production
 pullGoogleSheets();
 
 // Catch-all to serve index.html for SPA
-app.get('/:path(*)', (req, res) => {
+// Catch‑all to serve index.html for SPA
+app.get('/:any(.*)', (req, res) => {
   const indexPath = path.join(projectDir, 'dist', 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
@@ -215,5 +216,6 @@ app.get('/:path(*)', (req, res) => {
     res.send('Frontend is building... please refresh in a minute.');
   }
 });
+
 
 app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
