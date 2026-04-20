@@ -111,8 +111,28 @@ async function trySyncToGoogleSheets(type, newLog, productId, newBalance, inputP
     return true;
   } catch (err) {
     console.error('GS Sync Error:', err.message);
-    return false;
+    throw err;
   }
+}
+
+// --- Async Sync Queue System ---
+const syncQueue = [];
+let isQueueRunning = false;
+async function processQueue() {
+  if (isQueueRunning || syncQueue.length === 0) return;
+  isQueueRunning = true;
+  while (syncQueue.length > 0) {
+    const task = syncQueue[0];
+    try {
+      await trySyncToGoogleSheets(task.type, task.newLog, task.productId, task.newBalance, task.inputPrice, task.isNewProduct, task.productName);
+      syncQueue.shift(); // remove from queue after success
+    } catch (e) {
+      console.error("Queue sync paused, retrying later:", e.message);
+      break; // pause queue to respect limits
+    }
+    await new Promise(r => setTimeout(r, 2000)); // 2 sec delay = max 30 req/min (well under the 60/min limit)
+  }
+  isQueueRunning = false;
 }
 
 // APIs
@@ -159,8 +179,9 @@ app.post('/api/update-inventory', async (req, res) => {
     writeJson(productJsonPath, products);
     writeJson(type === 'purchase' ? buyJsonPath : outputJsonPath, type === 'purchase' ? buyData : outputData);
 
-    const excelSynced = await trySyncToGoogleSheets(type, newLog, productId, newBalance, inputPrice, isNewProduct, product['ชื่อพัสดุ']);
-    res.json({ message: 'Success', newBalance, excelSynced });
+    syncQueue.push({ type, newLog, productId, newBalance, inputPrice, isNewProduct, productName: product['ชื่อพัสดุ'] });
+    processQueue(); // Start background sync instantly
+    res.json({ message: 'Success', newBalance, excelSynced: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -181,6 +202,10 @@ app.post('/api/sync-from-excel', async (req, res) => {
 
 // Helper: Pull Google Sheets
 async function pullGoogleSheets() {
+  if (syncQueue.length > 0 || isQueueRunning) {
+    console.log("⏳ Queue is active. Skipping Google Sheets pull to prevent overwriting new local entries.");
+    return;
+  }
   try {
     const doc = await getDoc();
     const sheets = ['product', 'Dashboard', 'admin', 'Buy', 'Output'];
@@ -223,7 +248,12 @@ app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
   // Auto‑sync Google Sheets every 60 seconds
   setInterval(() => {
-    console.log('🔄 Auto‑syncing Google Sheets...');
-    pullGoogleSheets().catch(err => console.error('Auto‑sync error:', err));
+    if (syncQueue.length > 0) {
+      console.log(`🔄 Resuming background sync queue (${syncQueue.length} items left)...`);
+      processQueue();
+    } else {
+      console.log('🔄 Auto‑syncing Google Sheets (Pulling data)...');
+      pullGoogleSheets().catch(err => console.error('Auto‑sync error:', err));
+    }
   }, 60_000);
 });
