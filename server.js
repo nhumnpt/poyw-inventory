@@ -204,7 +204,7 @@ async function pullGoogleSheets() {
   } catch (e) { console.error('GS Pull Error:', e.message); }
 }
 
-setInterval(pullGoogleSheets, 30000); // Poll every 30s in production
+// Initial pull on start
 pullGoogleSheets();
 
 // Catch-all to serve index.html for SPA
@@ -221,9 +221,9 @@ app.use((req, res) => {
 
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
-  // Auto‑sync Google Sheets every 30 seconds
+  // Auto‑sync Google Sheets every 60 seconds
   setInterval(() => {
     console.log('🔄 Auto‑syncing Google Sheets...');
     pullGoogleSheets().catch(err => console.error('Auto‑sync error:', err));
-  }, 5_000);
+  }, 60_000);
 });
